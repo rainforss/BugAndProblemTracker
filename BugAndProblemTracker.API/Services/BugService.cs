@@ -61,5 +61,12 @@ namespace BugAndProblemTracker.API.Services
             await _db.Bugs.InsertOneAsync(bug);
         }
 
+        public async Task<DeleteResult> DeleteFrameworkBugByIdAsync(string frameworkId, string bugId)
+        {
+            var deleteResult = await _db.Bugs.DeleteOneAsync(b => b.Id == bugId&&b.FrameworkId==frameworkId);
+
+            return deleteResult;
+        }
+
     }
 }

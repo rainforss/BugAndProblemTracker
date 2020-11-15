@@ -86,6 +86,20 @@ namespace BugAndProblemTracker.API.Controllers
             return bug.Id != null ? (IActionResult) Ok(bug.Id) : BadRequest();
         }
 
+        [HttpDelete("{bugId}")]
+        public async Task<IActionResult> DeleteBugByIdAsync(string frameworkId,string bugId)
+        {
+            try
+            {
+                var result= await _bugService.DeleteFrameworkBugByIdAsync(frameworkId, bugId);
+                return Ok(result);
+            }
+            catch(MongoException mongoException)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = mongoException.Message });
+            }
+        }
+
         
     }
 }
