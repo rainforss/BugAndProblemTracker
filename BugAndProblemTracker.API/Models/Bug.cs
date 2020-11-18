@@ -12,14 +12,15 @@ namespace BugAndProblemTracker.API.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
+        [BsonIgnoreIfDefault]
         public string Id { get; set; }
 
-        [BsonElement("Name")]
+        [BsonElement("name")]
         [BsonRequired]
         public string Name { get; set; }
 
         [BsonRequired]
-        [StringLength(4000,MinimumLength =20)]
+        [StringLength(4000,MinimumLength =20,ErrorMessage ="Minimum 20 characters in the description")]
         public string Description { get; set; }
         
         public string FrameworkId { get; set; }

@@ -30,6 +30,26 @@ namespace BugAndProblemTracker.API.Services
         {
             return await _db.Frameworks.Find(f => f.Id == frameworkId).SingleOrDefaultAsync();
         }
+
+        public async Task<bool> FrameworkExisting(string languageId,string frameworkId)
+        {
+            var result = await _db.Frameworks.Find(f => f.Id == frameworkId&&f.LanguageId==languageId).SingleOrDefaultAsync();
+
+            return result != null;
+        }
+
+        public async Task<Error> FrameworkValidate(string languageId, string frameworkId)
+        {
+            var result = await _db.Frameworks.Find(f => f.Id == frameworkId && f.LanguageId == languageId).SingleOrDefaultAsync();
+
+            if (result == null)
+            {
+                return new Error() { Id = frameworkId, Message = "The resource could not be found", Type = "Framework Id" };
+            }
+
+            return null;
+        }
+
         public async Task AddFrameworkAsync(Framework framework)
         {
             var keys = Builders<Framework>.IndexKeys.Ascending("name");

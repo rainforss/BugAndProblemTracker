@@ -49,9 +49,28 @@ namespace BugAndProblemTracker.API.Controllers
 
         public async Task<IActionResult> GetBugByIdAsync(string bugId)
         {
-            var result = await _bugService.GetBugByIdAsync(bugId);
+            if (bugId.Length != 24)
+            {
+                return BadRequest( new { message=$"Bug Id should be a 24 characters hex string" });
+            }
 
-            return Ok(result);
+            try
+            {
+                var result = await _bugService.GetBugByIdAsync(bugId);
+
+                if (result == null)
+                {
+                    return NotFound($"Bug with Id {bugId} is not found");
+                }
+
+                return Ok(result);
+            }
+            catch(Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = exception.Message });
+            }
+
+            
 
 
         }
@@ -59,6 +78,10 @@ namespace BugAndProblemTracker.API.Controllers
         [HttpPost]
         public async Task<IActionResult> PostBugAsync([FromBody] Bug bug, string libraryId)
         {
+            if (libraryId.Length != 24)
+            {
+                return BadRequest(new { message = $"Library Id should be a 24 characters hex string" });
+            }
 
             if (bug.Name == null || bug.Description == null)
             {
@@ -79,8 +102,6 @@ namespace BugAndProblemTracker.API.Controllers
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = mongoException.Message });
             }
-
-
 
             return bug.Id != null ? (IActionResult)Ok(bug.Id) : BadRequest();
         }

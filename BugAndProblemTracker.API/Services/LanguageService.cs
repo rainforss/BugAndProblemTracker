@@ -26,6 +26,24 @@ namespace BugAndProblemTracker.API.Services
         {
             return await _db.Languages.Find(l => l.Id == languageId).SingleOrDefaultAsync();
         }
+
+        public async Task<bool> LanguageExisting(string languageId)
+        {
+            return await _db.Languages.Find(l => l.Id == languageId).SingleOrDefaultAsync() != null;
+        }
+
+        public async Task<Error> LanguageValidate(string languageId)
+        {
+            var result = await _db.Languages.Find(l => l.Id == languageId).SingleOrDefaultAsync();
+
+            if (result == null)
+            {
+                return new Error() { Id = languageId, Message = "The resource could not be found", Type = "Language Id" };
+            }
+
+            return null;
+        }
+
         public async Task AddLanguageAsync(Language language)
         {
             var keys = Builders<Language>.IndexKeys.Ascending("name");

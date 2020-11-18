@@ -31,7 +31,7 @@ namespace BugAndProblemTracker.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAuthentication(o => { o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; }).AddJwtBearer(o => { o.Authority = $"https://";o.Audience = Configuration[""]; });
+            services.AddAuthentication(o => { o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; }).AddJwtBearer(o => { o.Authority = $"https://{Configuration["Auth0:Domain"]}/";o.Audience = Configuration["Auth0:Audience"]; });
 
             ConventionRegistry.Register("Camel Case", new ConventionPack { new CamelCaseElementNameConvention() }, _ => true);
 
@@ -47,6 +47,8 @@ namespace BugAndProblemTracker.API
 
             services.AddTransient<LibraryService>();
 
+            services.AddTransient<ErrorService>();
+
             services.AddControllers();
         }
 
@@ -59,6 +61,8 @@ namespace BugAndProblemTracker.API
             }
 
             app.UseRouting();
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 

@@ -46,6 +46,11 @@ namespace BugAndProblemTracker.API.Services
             return await _db.Bugs.Find(b => b.Id == bugId).SingleOrDefaultAsync();
         }
 
+        public async Task<bool> BugExisting(string bugId)
+        {
+            return await _db.Bugs.Find(b => b.Id == bugId).SingleOrDefaultAsync() != null;
+        }
+
         
 
         public async Task AddBugAsync(Bug bug)
@@ -61,11 +66,27 @@ namespace BugAndProblemTracker.API.Services
             await _db.Bugs.InsertOneAsync(bug);
         }
 
-        public async Task<DeleteResult> DeleteFrameworkBugByIdAsync(string frameworkId, string bugId)
+        public async Task<Bug> DeleteFrameworkBugByIdAsync(string frameworkId, string bugId)
         {
-            var deleteResult = await _db.Bugs.DeleteOneAsync(b => b.Id == bugId&&b.FrameworkId==frameworkId);
+            var deleteResult = await _db.Bugs.FindOneAndDeleteAsync(b => b.Id == bugId&&b.FrameworkId==frameworkId);
 
             return deleteResult;
+        }
+
+        public async Task<Bug> UpdateBugByIdAsync(string bugId, Bug updatedBug)
+        {
+
+
+            var options = new FindOneAndReplaceOptions<Bug>
+            {
+                ReturnDocument = ReturnDocument.After
+            };
+
+            var filter = Builders<Bug>.Filter.Eq("Id", bugId);
+
+            var result = await _db.Bugs.FindOneAndReplaceAsync(filter, updatedBug,options);
+
+            return result;
         }
 
     }

@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using BugAndProblemTracker.API.Models;
 using BugAndProblemTracker.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -16,10 +19,14 @@ namespace BugAndProblemTracker.API.Controllers
     public class FrameworkBugsController : ControllerBase
     {
         private readonly BugService _bugService;
+        private readonly FrameworkService _frameworkService;
+        private readonly ErrorService _errorService;
 
-        public FrameworkBugsController(BugService bugService)
+        public FrameworkBugsController(BugService bugService,FrameworkService frameworkService,ErrorService errorService)
         {
             _bugService = bugService;
+            _frameworkService = frameworkService;
+            _errorService = errorService;
         }
 
 
@@ -27,17 +34,34 @@ namespace BugAndProblemTracker.API.Controllers
 
         [HttpGet]
 
-        public async Task<IActionResult> GetFrameworkBugsAsync(string frameworkId)
+        public async Task<IActionResult> GetFrameworkBugsAsync(string frameworkId, string languageId)
         {
+            if (frameworkId.Length != 24)
+            {
+                ModelState.AddModelError("Route", "Framework Id in URI must be 24 characters hex string");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
+                var errors = await _errorService.GetUriErrors(languageId, frameworkId);
+
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
                 var results = await _bugService.GetFrameworkBugsAsync(frameworkId);
 
                 return Ok(results.ToList());
             }
-            catch (MongoException mongoException)
+            catch (Exception exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new {message=mongoException.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = new { message = exception.Message } });
             }
             
 
@@ -48,11 +72,40 @@ namespace BugAndProblemTracker.API.Controllers
 
         [HttpGet("{bugId}")]
 
-        public async Task<IActionResult> GetBugByIdAsync(string bugId)
+        public async Task<IActionResult> GetBugByIdAsync(string bugId,string frameworkId,string languageId)
         {
-            var result = await _bugService.GetBugByIdAsync(bugId);
+            if (frameworkId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Framework Id should be a 24 characters hex string" } });
+            }
+            if (bugId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Bug Id should be a 24 characters hex string" } });
+            }
+            try
+            {
+                var errors = await _errorService.GetUriErrors(languageId, frameworkId);
 
-            return Ok(result);
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
+                var result = await _bugService.GetBugByIdAsync(bugId);
+
+                if (result == null)
+                {
+                    return NotFound(new { error = new { message = $"No bug with Id {bugId} exists" } });
+                }
+
+                return Ok(result);
+            }
+            catch(Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = new { message = exception.Message } });
+            }
+
+            
 
 
         }
@@ -60,25 +113,34 @@ namespace BugAndProblemTracker.API.Controllers
         [HttpPost]
         public async Task<IActionResult> PostBugAsync([FromBody]Bug bug,string frameworkId)
         {
-
-            if(bug.Name==null || bug.Description == null)
+            if (frameworkId.Length != 24)
             {
-                return BadRequest(new { message="Bug name or description cannot be blank" });
+                ModelState.AddModelError("Framework Id", "Framework Id must be a 24 characters hex string");
+            }
+
+            if (bug.Name == null)
+            {
+                ModelState.AddModelError("Name", "Bug name cannot be blank");
             }
 
             if (bug.FrameworkId != frameworkId)
             {
-                return BadRequest(new { message = "Framework Id does not match an existing framework" });
+                ModelState.AddModelError("Route unmatch", "Framework Id does not match an existing framework");
             }
 
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+                       
             try
             {
                 await _bugService.AddBugAsync(bug);
             }
-            catch (MongoException mongoException)
+            catch (Exception exception)
             {
 
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = mongoException.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = new { message = exception.Message } });
             }
 
             
@@ -87,16 +149,80 @@ namespace BugAndProblemTracker.API.Controllers
         }
 
         [HttpDelete("{bugId}")]
-        public async Task<IActionResult> DeleteBugByIdAsync(string frameworkId,string bugId)
+        public async Task<IActionResult> DeleteBugByIdAsync(string languageId,string frameworkId,string bugId)
         {
+            if (bugId.Length != 24)
+            {
+                ModelState.AddModelError("Bug Id", "Bug Id must be a 24 characters hex string");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             try
             {
+                var errors = await _errorService.GetUriErrors(languageId, frameworkId);
+
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
+                var toBeDeleted = await _bugService.GetBugByIdAsync(bugId);
+
+                if (toBeDeleted == null)
+                {
+                    return NotFound(new { error = new { message = $"No bug with Id {bugId} exists" } });
+                }
+
                 var result= await _bugService.DeleteFrameworkBugByIdAsync(frameworkId, bugId);
+
                 return Ok(result);
             }
             catch(MongoException mongoException)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = mongoException.Message });
+            }
+        }
+
+        [HttpPut("{bugId}")]
+        public async Task<IActionResult> UpdateBug(string bugId, string languageId, string frameworkId, [FromBody]Bug updatedBug)
+        {
+            if (updatedBug.FrameworkId.Length != 24)
+            {
+                ModelState.AddModelError("Framework Id", "Framework Id must be a 24 characters hex string");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try {
+
+                var errors = await _errorService.GetUriErrors(languageId, frameworkId);
+
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
+                var matchedFramework = await _frameworkService.GetFrameworkByIdAsync(updatedBug.FrameworkId);
+
+                if (matchedFramework==null)
+                {
+                    return BadRequest(new { error = new { message = "Framework Id does not match an existing framework" } });
+                }
+
+                var result = await _bugService.UpdateBugByIdAsync(bugId, updatedBug);
+
+                return Ok(result);
+            }
+            catch(Exception exception)
+            {
+                return BadRequest(exception.Message);
             }
         }
 
