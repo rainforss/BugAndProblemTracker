@@ -50,6 +50,18 @@ namespace BugAndProblemTracker.API.Services
             return null;
         }
 
+        public async Task<bool> FrameworkNameHasDuplicate(string name)
+        {
+            var result = await _db.Frameworks.Find(f => f.Name.ToLower() == name.ToLower()).FirstOrDefaultAsync();
+
+            if (result == null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public async Task AddFrameworkAsync(Framework framework)
         {
             var keys = Builders<Framework>.IndexKeys.Ascending("name");
@@ -61,6 +73,20 @@ namespace BugAndProblemTracker.API.Services
             _db.Frameworks.Indexes.CreateOne(model);
 
             await _db.Frameworks.InsertOneAsync(framework);
+        }
+
+        public async Task<Framework> UpdateFrameworkByIdAsync(string frameworkId, Framework updatedFramework)
+        {
+            var options = new FindOneAndReplaceOptions<Framework>
+            {
+                ReturnDocument = ReturnDocument.After
+            };
+
+            var filter = Builders<Framework>.Filter.Eq("Id", frameworkId);
+
+            var result = await _db.Frameworks.FindOneAndReplaceAsync(filter, updatedFramework, options);
+
+            return result;
         }
     }
 }

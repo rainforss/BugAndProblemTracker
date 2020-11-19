@@ -11,15 +11,21 @@ namespace BugAndProblemTracker.API.Services
         private readonly FrameworkService _frameworkService;
 
         private readonly LanguageService _languageService;
+        private readonly BugService _bugService;
+        private readonly LibraryService _libraryService;
 
-        public ErrorService(FrameworkService frameworkService, LanguageService languageService)
+        public ErrorService(FrameworkService frameworkService, LanguageService languageService, BugService bugService, LibraryService libraryService)
         {
             _frameworkService = frameworkService;
 
             _languageService = languageService;
+
+            _bugService = bugService;
+
+            _libraryService = libraryService;
         }
 
-        public async Task<List<Error>> GetUriErrors(string languageId,string frameworkId)
+        public async Task<List<Error>> GetUriErrors(string languageId,string frameworkId=null,string libraryId=null,string bugId=null)
         {
             List<Task<Error>> errorTasks = new List<Task<Error>>();
 
@@ -27,11 +33,21 @@ namespace BugAndProblemTracker.API.Services
 
             var languageError = _languageService.LanguageValidate(languageId);
 
-            var frameworkError = _frameworkService.FrameworkValidate(languageId, frameworkId);
-
             errorTasks.Add(languageError);
 
-            errorTasks.Add(frameworkError);
+            if (frameworkId != null)
+            {
+                var frameworkError = _frameworkService.FrameworkValidate(languageId, frameworkId);
+
+                errorTasks.Add(frameworkError);
+            }
+
+            if (libraryId != null)
+            {
+                var libraryError = _libraryService.LibraryValidate(languageId, libraryId);
+
+                errorTasks.Add(libraryError);
+            }
 
             var errors = await Task.WhenAll(errorTasks);
 

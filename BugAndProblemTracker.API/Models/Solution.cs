@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using BugAndProblemTracker.API.Attributes;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ namespace BugAndProblemTracker.API.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
+        [SwaggerIgnore]
         public string Id { get; set; }
 
         [BsonRequired]

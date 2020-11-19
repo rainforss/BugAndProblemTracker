@@ -30,6 +30,36 @@ namespace BugAndProblemTracker.API.Services
         {
             return await _db.Libraries.Find(l => l.Id == libraryId).SingleOrDefaultAsync();
         }
+
+        public async Task<bool> LibraryExisting(string libraryId)
+        {
+            return await _db.Libraries.Find(l => l.Id == libraryId).SingleOrDefaultAsync() != null;
+        }
+
+        public async Task<Error> LibraryValidate(string languageId,string libraryId)
+        {
+            var result = await _db.Libraries.Find(l => l.Id == libraryId&&l.LanguageId==languageId).SingleOrDefaultAsync();
+
+            if (result == null)
+            {
+                return new Error() { Id = libraryId, Message = "The resource could not be found", Type = "Library Id" };
+            }
+
+            return null;
+        }
+
+        public async Task<bool> LibraryNameHasDuplicate(string name)
+        {
+            var result = await _db.Libraries.Find(l => l.Name.ToLower() == name.ToLower()).FirstOrDefaultAsync();
+
+            if (result == null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public async Task AddLibraryAsync(Library library)
         {
             var keys = Builders<Library>.IndexKeys.Ascending("name");
@@ -41,6 +71,20 @@ namespace BugAndProblemTracker.API.Services
             _db.Libraries.Indexes.CreateOne(model);
 
             await _db.Libraries.InsertOneAsync(library);
+        }
+
+        public async Task<Library> UpdateLibraryByIdAsync(string libraryId,Library updatedLibrary)
+        {
+            var options = new FindOneAndReplaceOptions<Library>
+            {
+                ReturnDocument = ReturnDocument.After
+            };
+
+            var filter = Builders<Library>.Filter.Eq("Id", libraryId);
+
+            var result = await _db.Libraries.FindOneAndReplaceAsync(filter, updatedLibrary, options);
+
+            return result;
         }
     }
 }

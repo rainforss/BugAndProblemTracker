@@ -15,50 +15,111 @@ namespace BugAndProblemTracker.API.Controllers
     public class LibraryController : ControllerBase
     {
         private readonly LibraryService _libraryService;
+        private readonly ErrorService _errorService;
 
-        public LibraryController(LibraryService libraryService)
+        public LibraryController(LibraryService libraryService, ErrorService errorService)
         {
             _libraryService = libraryService;
+
+            _errorService = errorService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetLanguageLibrariesAsync(string languageId)
         {
-            var results = await _libraryService.GetLanguageLibrariesAsync(languageId);
+            if (languageId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Language Id should be a 24 characters hex string" } });
+            }
 
-            return Ok(results.ToList());
+            try
+            {
+                var errors = await _errorService.GetUriErrors(languageId);
+
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
+                var results = await _libraryService.GetLanguageLibrariesAsync(languageId);
+
+                return Ok(results.ToList());
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = new { message = exception.Message } });
+            }
+
+            
         }
 
         [HttpGet("{libraryId}")]
 
-        public async Task<IActionResult> GetLibraryByIdAsync(string libraryId)
+        public async Task<IActionResult> GetLibraryByIdAsync(string languageId,string libraryId)
         {
-            var result = await _libraryService.GetLibraryByIdAsync(libraryId);
+            if (languageId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Language Id should be a 24 characters hex string" } });
+            }
+            if (libraryId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Framework Id should be a 24 characters hex string" } });
+            }
 
-            return Ok(result);
+            try
+            {
+                var errors = await _errorService.GetUriErrors(languageId, libraryId: libraryId);
+
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
+                var result = await _libraryService.GetLibraryByIdAsync(libraryId);
+
+                return Ok(result);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = new { message = exception.Message } });
+            }
+
+
         }
 
         [HttpPost]
 
         public async Task<IActionResult> AddLibraryAsync([FromBody]Library library, string languageId)
         {
-            if (library.Name == null || library.LanguageId == null)
+            if (languageId.Length != 24)
             {
-                return BadRequest(new { message = "Library name or language Id cannot be blank" });
+                return BadRequest(new { error = new { message = $"Language Id should be a 24 characters hex string" } });
             }
 
             if (library.LanguageId != languageId)
             {
-                return BadRequest(new { message = "Language Id does not match an existing language" });
+                ModelState.AddModelError("Language unmatch", "Framework Id does not match an existing framework");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
             }
 
             try
             {
+                var errors = await _errorService.GetUriErrors(languageId);
+
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
                 await _libraryService.AddLibraryAsync(library);
             }
-            catch (MongoException mongoException)
+            catch (Exception exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = mongoException.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = new { message = exception.Message } });
             }
 
 

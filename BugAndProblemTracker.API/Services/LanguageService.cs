@@ -44,6 +44,18 @@ namespace BugAndProblemTracker.API.Services
             return null;
         }
 
+        public async Task<bool> LanguageNameHasDuplicate(string name)
+        {
+            var result = await _db.Languages.Find(l => l.Name.ToLower() == name.ToLower()).FirstOrDefaultAsync();
+
+            if(result == null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public async Task AddLanguageAsync(Language language)
         {
             var keys = Builders<Language>.IndexKeys.Ascending("name");
@@ -55,6 +67,20 @@ namespace BugAndProblemTracker.API.Services
             _db.Languages.Indexes.CreateOne(model);
 
             await _db.Languages.InsertOneAsync(language);
+        }
+
+        public async Task<Language> UpdateLanguageByIdAsync(string languageId,Language updatedLanguage)
+        {
+            var options = new FindOneAndReplaceOptions<Language>
+            {
+                ReturnDocument = ReturnDocument.After
+            };
+
+            var filter = Builders<Language>.Filter.Eq("Id", languageId);
+
+            var result = await _db.Languages.FindOneAndReplaceAsync(filter, updatedLanguage, options);
+
+            return result;
         }
     }
 }

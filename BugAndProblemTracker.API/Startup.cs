@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BugAndProblemTracker.API.Attributes;
 using BugAndProblemTracker.API.Contexts;
 using BugAndProblemTracker.API.Models;
 using BugAndProblemTracker.API.Services;
@@ -50,6 +51,8 @@ namespace BugAndProblemTracker.API
             services.AddTransient<ErrorService>();
 
             services.AddControllers();
+
+            services.AddSwaggerGen(c=> { c.SchemaFilter<SwaggerIgnoreFilter>(); });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -59,6 +62,10 @@ namespace BugAndProblemTracker.API
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseSwagger();
+
+            app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"); c.RoutePrefix = string.Empty;  });
 
             app.UseRouting();
 

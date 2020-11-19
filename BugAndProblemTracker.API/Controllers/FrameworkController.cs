@@ -15,51 +15,111 @@ namespace BugAndProblemTracker.API.Controllers
     public class FrameworkController : ControllerBase
     {
         private readonly FrameworkService _frameworkService;
+        private readonly ErrorService _errorService;
 
-        public FrameworkController(FrameworkService frameworkService)
+        public FrameworkController(FrameworkService frameworkService,ErrorService errorService)
         {
             _frameworkService = frameworkService;
+
+            _errorService = errorService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetLanguageFrameworksAsync(string languageId)
         {
-            var results = await _frameworkService.GetLanguageFrameworksAsync(languageId);
+            if (languageId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Language Id should be a 24 characters hex string" } });
+            }
 
-            return Ok(results.ToList());
+            try
+            {
+                var errors = await _errorService.GetUriErrors(languageId);
+
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
+                var results = await _frameworkService.GetLanguageFrameworksAsync(languageId);
+
+                return Ok(results.ToList());
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = new { message = exception.Message } });
+            }
+
+
 
         }
 
         [HttpGet("{frameworkId}")]
-        public async Task<IActionResult> GetFrameworkByIdAsync(string frameworkId)
+        public async Task<IActionResult> GetFrameworkByIdAsync(string languageId,string frameworkId)
         {
-            var result = await _frameworkService.GetFrameworkByIdAsync(frameworkId);
+            if (languageId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Language Id should be a 24 characters hex string" } });
+            }
+            if (frameworkId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Framework Id should be a 24 characters hex string" } });
+            }
 
-            return Ok(result);
+            try
+            {
+                var errors = await _errorService.GetUriErrors(languageId, frameworkId);
+
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
+                var result = await _frameworkService.GetFrameworkByIdAsync(frameworkId);
+
+                return Ok(result);
+            }
+            catch (Exception exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = new { message = exception.Message } });
+            }
+
+            
         }
 
 
         [HttpPost]
         public async Task<IActionResult> AddFrameworkAsync([FromBody]Framework framework,string languageId)
         {
-
-            if (framework.Name == null || framework.LanguageId ==null)
+            if (languageId.Length != 24)
             {
-                return BadRequest(new { message = "Framework name or language Id cannot be blank" });
+                return BadRequest(new { error = new { message = $"Language Id should be a 24 characters hex string" } });
             }
 
             if (framework.LanguageId != languageId)
             {
-                return BadRequest(new { message = "Language Id does not match an existing language" });
+                ModelState.AddModelError("Language unmatch", "Framework Id does not match an existing framework");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
             }
 
             try
             {
+                var errors = await _errorService.GetUriErrors(languageId);
+
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
                 await _frameworkService.AddFrameworkAsync(framework);
             }
-            catch (MongoException mongoException)
+            catch (Exception exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = mongoException.Message });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error = new { message = exception.Message } });
             }
 
 

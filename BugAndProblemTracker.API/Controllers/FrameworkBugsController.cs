@@ -5,9 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using BugAndProblemTracker.API.Models;
 using BugAndProblemTracker.API.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -74,6 +72,10 @@ namespace BugAndProblemTracker.API.Controllers
 
         public async Task<IActionResult> GetBugByIdAsync(string bugId,string frameworkId,string languageId)
         {
+            if (languageId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Language Id should be a 24 characters hex string" } });
+            }
             if (frameworkId.Length != 24)
             {
                 return BadRequest(new { error = new { message = $"Framework Id should be a 24 characters hex string" } });
@@ -82,6 +84,7 @@ namespace BugAndProblemTracker.API.Controllers
             {
                 return BadRequest(new { error = new { message = $"Bug Id should be a 24 characters hex string" } });
             }
+
             try
             {
                 var errors = await _errorService.GetUriErrors(languageId, frameworkId);
@@ -111,21 +114,25 @@ namespace BugAndProblemTracker.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostBugAsync([FromBody]Bug bug,string frameworkId)
+        public async Task<IActionResult> PostBugAsync([FromBody]Bug bug,string frameworkId, string languageId)
         {
+            if (languageId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Language Id should be a 24 characters hex string" } });
+            }
             if (frameworkId.Length != 24)
             {
-                ModelState.AddModelError("Framework Id", "Framework Id must be a 24 characters hex string");
+                return BadRequest(new { error = new { message = $"Framework Id should be a 24 characters hex string" } });
             }
 
-            if (bug.Name == null)
+            if (bug.LanguageId != languageId)
             {
-                ModelState.AddModelError("Name", "Bug name cannot be blank");
+                ModelState.AddModelError("Language unmatch", "Framework Id does not match an existing framework");
             }
 
             if (bug.FrameworkId != frameworkId)
             {
-                ModelState.AddModelError("Route unmatch", "Framework Id does not match an existing framework");
+                ModelState.AddModelError("Framework unmatch", "Framework Id does not match an existing framework");
             }
 
             if (!ModelState.IsValid)
@@ -135,6 +142,13 @@ namespace BugAndProblemTracker.API.Controllers
                        
             try
             {
+                var errors = await _errorService.GetUriErrors(languageId, frameworkId);
+
+                if (errors.Count != 0)
+                {
+                    return NotFound(errors);
+                }
+
                 await _bugService.AddBugAsync(bug);
             }
             catch (Exception exception)
@@ -151,9 +165,17 @@ namespace BugAndProblemTracker.API.Controllers
         [HttpDelete("{bugId}")]
         public async Task<IActionResult> DeleteBugByIdAsync(string languageId,string frameworkId,string bugId)
         {
+            if (languageId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Language Id should be a 24 characters hex string" } });
+            }
+            if (frameworkId.Length != 24)
+            {
+                return BadRequest(new { error = new { message = $"Framework Id should be a 24 characters hex string" } });
+            }
             if (bugId.Length != 24)
             {
-                ModelState.AddModelError("Bug Id", "Bug Id must be a 24 characters hex string");
+                return BadRequest(new { error = new { message = $"Bug Id should be a 24 characters hex string" } });
             }
 
             if (!ModelState.IsValid)
@@ -207,13 +229,6 @@ namespace BugAndProblemTracker.API.Controllers
                 if (errors.Count != 0)
                 {
                     return NotFound(errors);
-                }
-
-                var matchedFramework = await _frameworkService.GetFrameworkByIdAsync(updatedBug.FrameworkId);
-
-                if (matchedFramework==null)
-                {
-                    return BadRequest(new { error = new { message = "Framework Id does not match an existing framework" } });
                 }
 
                 var result = await _bugService.UpdateBugByIdAsync(bugId, updatedBug);
