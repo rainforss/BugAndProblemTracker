@@ -11,10 +11,10 @@ namespace BugAndProblemTracker.API.Services
         private readonly FrameworkService _frameworkService;
 
         private readonly LanguageService _languageService;
-        private readonly BugService _bugService;
+        private readonly IBugService _bugService;
         private readonly LibraryService _libraryService;
 
-        public ErrorService(FrameworkService frameworkService, LanguageService languageService, BugService bugService, LibraryService libraryService)
+        public ErrorService(FrameworkService frameworkService, LanguageService languageService, IBugService bugService, LibraryService libraryService)
         {
             _frameworkService = frameworkService;
 

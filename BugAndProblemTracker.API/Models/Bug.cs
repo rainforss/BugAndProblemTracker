@@ -17,7 +17,6 @@ namespace BugAndProblemTracker.API.Models
         [SwaggerIgnore]
         public string Id { get; set; }
 
-        [BsonElement("name")]
         [BsonRequired]
         [Required(ErrorMessage ="Name field cannot be blank")]
         public string Name { get; set; }

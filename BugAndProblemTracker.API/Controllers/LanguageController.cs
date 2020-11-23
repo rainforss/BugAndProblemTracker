@@ -10,6 +10,7 @@ using MongoDB.Driver;
 
 namespace BugAndProblemTracker.API.Controllers
 {
+    [Produces("application/json")]
     [Route("api/languages")]
     [ApiController]
     public class LanguageController : ControllerBase
@@ -35,6 +36,20 @@ namespace BugAndProblemTracker.API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new { error = new { message = exception.Message } });
             }
         }
+
+        /// <summary>
+        /// Gets a language by Id
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        /// 
+        ///     GET /languages/languageId
+        /// 
+        /// </remarks>
+        /// <param name="languageId"></param>
+        /// <returns>A newly created language</returns>
+        /// <response code="200">Returns the newly created language</response>
+        /// <response code="400">If missing fields</response>
 
         [HttpGet("{languageId}")]
 
@@ -67,7 +82,24 @@ namespace BugAndProblemTracker.API.Controllers
 
         }
 
+        /// <summary>
+        /// Creates a language
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        /// 
+        ///     POST /languages
+        ///     {
+        ///         "name":"language name"
+        ///     }
+        /// 
+        /// </remarks>
+        /// <param name="language"></param>
+        /// <returns>A newly created language</returns>
+        /// <response code="200">Returns the newly created language</response>
+        /// <response code="400">If missing fields</response>
         [HttpPost]
+
 
         public async Task<IActionResult> AddLanguageAsync([FromBody]Language language)
         {

@@ -16,11 +16,11 @@ namespace BugAndProblemTracker.API.Controllers
     [Route("api/languages/{languageId}/frameworks/{frameworkId}/bugs")]
     public class FrameworkBugsController : ControllerBase
     {
-        private readonly BugService _bugService;
+        private readonly IBugService _bugService;
         private readonly FrameworkService _frameworkService;
         private readonly ErrorService _errorService;
 
-        public FrameworkBugsController(BugService bugService,FrameworkService frameworkService,ErrorService errorService)
+        public FrameworkBugsController(IBugService bugService,FrameworkService frameworkService,ErrorService errorService)
         {
             _bugService = bugService;
             _frameworkService = frameworkService;

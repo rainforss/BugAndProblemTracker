@@ -55,13 +55,13 @@ namespace BugAndProblemTracker.API.Services
 
         public async Task AddBugAsync(Bug bug)
         {
-            var keys = Builders<Bug>.IndexKeys.Ascending("Name");
+            //var keys = Builders<Bug>.IndexKeys.Ascending("Name");
 
-            var indexOptions = new CreateIndexOptions { Unique = true };
+            //var indexOptions = new CreateIndexOptions { Unique = true };
 
-            var model = new CreateIndexModel<Bug>(keys, indexOptions);
+            //var model = new CreateIndexModel<Bug>(keys, indexOptions);
 
-            _db.Bugs.Indexes.CreateOne(model);
+            //_db.Bugs.Indexes.CreateOne(model);
 
             await _db.Bugs.InsertOneAsync(bug);
         }

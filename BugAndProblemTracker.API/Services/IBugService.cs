@@ -19,5 +19,11 @@ namespace BugAndProblemTracker.API.Services
 
         Task AddBugAsync(Bug bug);
 
+        Task<bool> BugExisting(string bugId);
+
+        Task<Bug> DeleteFrameworkBugByIdAsync(string frameworkId, string bugId);
+
+        Task<Bug> UpdateBugByIdAsync(string bugId, Bug updatedBug);
+
     }
 }

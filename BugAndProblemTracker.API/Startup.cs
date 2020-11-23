@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using BugAndProblemTracker.API.Attributes;
 using BugAndProblemTracker.API.Contexts;
@@ -15,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 
@@ -40,7 +43,7 @@ namespace BugAndProblemTracker.API
 
             services.AddScoped(s => new MongoDBContext(s.GetRequiredService<IMongoClient>(), Configuration["DbName"]));
 
-            services.AddTransient<BugService>();
+            services.AddTransient<IBugService,BugService>();
 
             services.AddTransient<LanguageService>();
 
@@ -52,7 +55,10 @@ namespace BugAndProblemTracker.API
 
             services.AddControllers();
 
-            services.AddSwaggerGen(c=> { c.SchemaFilter<SwaggerIgnoreFilter>(); });
+            services.AddSwaggerGen(c=> { c.SchemaFilter<SwaggerIgnoreFilter>(); c.SwaggerDoc("v1", new OpenApiInfo { Version = "v1", Title = "Bugs and Problems Tracker", Description = "Never make the same mistake again. If you do, just look it up.", Contact = new OpenApiContact { Name = "Jake Chen", Email = "shengyan@ualberta.ca" } }); var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
