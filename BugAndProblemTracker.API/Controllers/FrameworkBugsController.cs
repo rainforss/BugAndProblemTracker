@@ -159,7 +159,7 @@ namespace BugAndProblemTracker.API.Controllers
 
             
 
-            return bug.Id != null ? (IActionResult) Ok(bug.Id) : BadRequest();
+            return bug.Id != null ? (IActionResult) Ok(bug) : BadRequest();
         }
 
         [HttpDelete("{bugId}")]

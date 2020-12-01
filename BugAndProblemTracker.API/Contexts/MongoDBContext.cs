@@ -15,14 +15,6 @@ namespace BugAndProblemTracker.API.Contexts
         {
             _db = client.GetDatabase(dbName);
 
-            var keys = Builders<Bug>.IndexKeys.Ascending("name");
-
-            var indexOptions = new CreateIndexOptions { Unique = true };
-
-            var model = new CreateIndexModel<Bug>(keys, indexOptions);
-
-            _db.GetCollection<Bug>("bugs").Indexes.CreateOne(model);
-
         }
 
         public IMongoCollection<Bug> Bugs => _db.GetCollection<Bug>("bugs");

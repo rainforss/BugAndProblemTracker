@@ -30,13 +30,27 @@ namespace BugAndProblemTracker.API.Models
         [RegularExpression(@"^[a-fA-F0-9]+$",ErrorMessage = "Language Id must be a 24 hex string")]
         public string LanguageId { get; set; }
 
+        //[BsonRequired]
+        //[StringLength(24, ErrorMessage = "Name cannot be longer than 24 characters")]
+        //[RegularExpression(@"^[a-fA-F0-9]+$", ErrorMessage = "Language Id must be a 24 hex string")]
+        //public string LanguageName { get; set; }
+
         [StringLength(24, MinimumLength = 24, ErrorMessage = "Framework Id must be a 24 hex string")]
         [RegularExpression(@"^[a-fA-F0-9]+$", ErrorMessage = "Framework Id must be a 24 hex string")]
         public string FrameworkId { get; set; }
 
+
+        //[StringLength(24, ErrorMessage = "Name cannot be longer than 24 characters")]
+        //[RegularExpression(@"^[a-fA-F0-9]+$", ErrorMessage = "Language Id must be a 24 hex string")]
+        //public string FrameworkName { get; set; }
+
         [StringLength(24, MinimumLength = 24, ErrorMessage = "Library Id must be a 24 hex string")]
         [RegularExpression(@"^[a-fA-F0-9]+$", ErrorMessage = "Library Id must be a 24 hex string")]
         public string LibraryId { get; set; }
+
+        //[StringLength(24, ErrorMessage = "Name cannot be longer than 24 characters")]
+        //[RegularExpression(@"^[a-fA-F0-9]+$", ErrorMessage = "Language Id must be a 24 hex string")]
+        //public string LibraryName { get; set; }
 
         //public Bug()
         //{
